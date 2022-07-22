@@ -69,10 +69,10 @@ function add(a, b) {
     return "Not a number";
   }
 }
-
+// multiply function
 function multiply(a, b) {
   if (!isNaN(a) && !isNaN(b) && a !== null && b !== null) {
-    return a / b;
+    return a * b;
   } else {
     return "Not a number";
   }
