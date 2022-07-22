@@ -62,6 +62,10 @@ function streamToString(stream) {
   });
 }
 
+function add(a, b) {
+  return a + b;
+}
+
 const start = async () => {
   try {
     await checkLimitReset();
