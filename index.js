@@ -82,7 +82,7 @@ function divide(a, b) {
   if (!isNaN(a) && !isNaN(b) && a !== null && b !== null) {
     return a / b;
   } else {
-    return "Not a number";
+    console.log("Not a number");
   }
 }
 
