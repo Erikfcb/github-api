@@ -61,7 +61,7 @@ function streamToString(stream) {
     stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
   });
 }
-
+// add function
 function add(a, b) {
   if (!isNaN(a) && !isNaN(b) && a !== null && b !== null) {
     return a + b;
