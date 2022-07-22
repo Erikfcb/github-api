@@ -77,10 +77,10 @@ function multiply(a, b) {
     console.log("Not a number");
   }
 }
-
+// division function
 function divide(a, b) {
   if (!isNaN(a) && !isNaN(b) && a !== null && b !== null) {
-    return a + b;
+    return a / b;
   } else {
     return "Not a number";
   }
