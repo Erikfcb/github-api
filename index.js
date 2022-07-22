@@ -61,12 +61,20 @@ function streamToString(stream) {
     stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
   });
 }
-
+// add function
 function add(a, b) {
   if (!isNaN(a) && !isNaN(b) && a !== null && b !== null) {
     return a + b;
   } else {
-    return "Not a number";
+    console.log("Not a number");
+  }
+}
+// multiply function
+function multiply(a, b) {
+  if (!isNaN(a) && !isNaN(b) && a !== null && b !== null) {
+    return a * b;
+  } else {
+    console.log("Not a number");
   }
 }
 
