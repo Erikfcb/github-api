@@ -63,7 +63,11 @@ function streamToString(stream) {
 }
 
 function add(a, b) {
-  return a + b;
+  if (!isNaN(a) && !isNaN(b) && a !== null && b !== null) {
+    return a + b;
+  } else {
+    return "Not a number";
+  }
 }
 
 const start = async () => {
