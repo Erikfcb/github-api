@@ -7,16 +7,17 @@ import fs from "fs";
 // );
 // console.log("diffs: ", await streamToString(diffs.body));
 
-const OWNER = "vercel";
-const REPO = "next.js";
+const OWNER = process.env.OWNER || "vercel";
+const REPO = process.env.REPO || "next.js";
 
 const ignorePaths = [".git", "README", "config", ".json"];
 
 const fetch = async (url) => {
   await checkLimitReset();
+
   const result = await nodeFetch(url, {
     headers: {
-      Authorization: `token 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 `,
+      Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN} `,
     },
   });
   return result.json();
@@ -57,7 +58,7 @@ const checkLimitReset = async () => {
   const result = await (
     await nodeFetch(githubLinks.rateLimitStatus, {
       headers: {
-        Authorization: `token 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 `,
+        Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN} `,
       },
     })
   ).json();
