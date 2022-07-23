@@ -58,7 +58,7 @@ const checkLimitReset = async () => {
   const result = await (
     await nodeFetch(githubLinks.rateLimitStatus, {
       headers: {
-        Authorization: `token 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 `,
+        Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN} `,
       },
     })
   ).json();
