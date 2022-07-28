@@ -3,10 +3,7 @@ import { createTwoFilesPatch, parsePatch } from "diff";
 import fs from "fs";
 import { repositories } from "./repositories.js";
 
-// const diffs = await nodeFetch(
-//   "https://github.com/vercel/next.js/pull/38844.diff"
-// );
-// console.log("diffs: ", await streamToString(diffs.body));
+const ALLOWED_NUMBER_OF_CHARACTERS = 512;
 
 const statusFilePath = "status.json";
 
@@ -102,15 +99,6 @@ const checkLimitReset = async () => {
   }
 };
 
-function streamToString(stream) {
-  const chunks = [];
-  return new Promise((resolve, reject) => {
-    stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
-    stream.on("error", (err) => reject(err));
-    stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-  });
-}
-
 const getFullFileText = async (commitID, path, owner, repo) => {
   const trees = await fetch(githubLinks.trees({ commitID, owner, repo }));
 
@@ -175,7 +163,12 @@ const handleComment = async ({ pr, comment, path, owner, repo }) => {
     ? await getFullFileText(comment.commit_id, path, owner, repo)
     : false;
 
-  if (before && after) {
+  if (
+    before &&
+    after &&
+    before.length < ALLOWED_NUMBER_OF_CHARACTERS && // check number of characters
+    after.length < ALLOWED_NUMBER_OF_CHARACTERS
+  ) {
     const final = getFinalBeforeAndAfter({ before, after });
 
     if (final.before && final.after) {
