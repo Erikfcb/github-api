@@ -1,7 +1,16 @@
 import nodeFetch from "node-fetch";
 import { createTwoFilesPatch, parsePatch } from "diff";
 import fs from "fs";
-import { repositories } from "./repositories.js";
+import repos from "./repositories.json" assert { type: "json" };
+// import { repositories } from "./repositories.js";
+
+const repositories = repos.items
+  .map(({ name }) => {
+    const [owner, repo] = name.split("/");
+
+    return { owner, repo };
+  })
+  .filter(({ owner, repo }) => owner && repo);
 
 const ALLOWED_NUMBER_OF_CHARACTERS = 512;
 
@@ -221,6 +230,7 @@ const checkSetOfPullRequests = async ({
       continue;
     }
 
+    // checks if finally merged (means approved)
     if (pr.merged_at) {
       const comments = await fetch(pr.review_comments_url);
 
@@ -234,11 +244,17 @@ const checkSetOfPullRequests = async ({
           ignorePaths.forEach((element) => {
             if (path.includes(element)) {
               shouldSkip = true;
+              console.log("shouldSkip: ", path);
             }
           });
 
+          // Exclude comments from the author of the PR
+          if (pr.user.login === comment.user.login) {
+            shouldSkip = true;
+            console.log("shouldSkip: commenter is pr creator");
+          }
+
           if (shouldSkip) {
-            console.log("shouldSkip: ", path);
             continue;
           }
 
