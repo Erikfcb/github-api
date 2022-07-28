@@ -287,7 +287,7 @@ const start = async () => {
     process.exit(0);
   } catch (error) {
     console.error("error: ", error.message);
-    writeError({ [new Date().toDateString()]: error.message });
+    writeError({ [new Date().toISOString()]: error.message });
     start();
   }
 };
