@@ -10,7 +10,7 @@ import { repositories } from "./repositories.js";
 
 const statusFilePath = "status.json";
 
-const ignorePaths = [".git", "README", "config", ".json"];
+const ignorePaths = [".git", "README", "config", ".json", ".yml", ".test"];
 
 const fetch = async (url) => {
   await checkLimitReset();
@@ -286,7 +286,7 @@ const start = async () => {
     }
     process.exit(0);
   } catch (error) {
-    console.error("errors: ", error.message);
+    console.error("error: ", error.message);
     writeError({ [new Date().toISOString()]: error.message });
     start();
   }
