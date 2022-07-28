@@ -262,6 +262,10 @@ const checkSetOfPullRequests = async ({
 
 const start = async () => {
   try {
+    if (!fs.existsSync("datasets")) {
+      fs.mkdirSync("datasets");
+    }
+
     for (const { owner, repo } of repositories) {
       let page = 1;
       let stopCondition = false;
