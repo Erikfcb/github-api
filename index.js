@@ -7,7 +7,16 @@ const ALLOWED_NUMBER_OF_CHARACTERS = 512;
 
 const statusFilePath = "status.json";
 
-const ignorePaths = [".git", "README", "config", ".json", ".yml", ".test"];
+const ignorePaths = [
+  ".git",
+  "README",
+  "config",
+  ".json",
+  ".yml",
+  ".test",
+  "environment.d",
+  ".env",
+];
 
 const fetch = async (url) => {
   await checkLimitReset();
