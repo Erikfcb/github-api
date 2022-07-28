@@ -1,14 +1,14 @@
 import nodeFetch from "node-fetch";
 import { createTwoFilesPatch, parsePatch } from "diff";
 import fs from "fs";
+import { repositories } from "./repositories.js";
 
 // const diffs = await nodeFetch(
 //   "https://github.com/vercel/next.js/pull/38844.diff"
 // );
 // console.log("diffs: ", await streamToString(diffs.body));
 
-const OWNER = process.env.OWNER || "vercel";
-const REPO = process.env.REPO || "next.js";
+const statusFilePath = "status.json";
 
 const ignorePaths = [".git", "README", "config", ".json"];
 
@@ -25,10 +25,10 @@ const fetch = async (url) => {
 
 const githubLinks = {
   rateLimitStatus: "https://api.github.com/rate_limit",
-  allPrs: ({ per_page = 100, page }) =>
-    `https://api.github.com/repos/${OWNER}/${REPO}/pulls?state=closed&per_page=${per_page}&page=${page}`,
-  trees: ({ commitID }) =>
-    `https://api.github.com/repos/${OWNER}/${REPO}/git/trees/${commitID}?recursive=true`,
+  allPrs: ({ per_page = 100, page, owner, repo }) =>
+    `https://api.github.com/repos/${owner}/${repo}/pulls?state=closed&per_page=${per_page}&page=${page}&sort=created&direction=desc`,
+  trees: ({ commitID, owner, repo }) =>
+    `https://api.github.com/repos/${owner}/${repo}/git/trees/${commitID}?recursive=true`,
 };
 
 const logTimeLeft = (msLeft) => {
@@ -52,6 +52,19 @@ const waitForReset = (ms) => {
       resolve();
     }, ms);
   });
+};
+
+const writeStatus = (data) => {
+  let currentStatus = {};
+  try {
+    currentStatus = JSON.parse(fs.readFileSync(statusFilePath));
+  } catch {}
+
+  fs.writeFileSync(
+    statusFilePath,
+    JSON.stringify({ ...currentStatus, ...data }),
+    "utf8"
+  );
 };
 
 const checkLimitReset = async () => {
@@ -85,8 +98,8 @@ function streamToString(stream) {
   });
 }
 
-const getFullFileText = async (commitID, path) => {
-  const trees = await fetch(githubLinks.trees({ commitID }));
+const getFullFileText = async (commitID, path, owner, repo) => {
+  const trees = await fetch(githubLinks.trees({ commitID, owner, repo }));
 
   const tree = trees.tree.find((item) => item.path === path);
 
@@ -137,12 +150,27 @@ const getFinalBeforeAndAfter = ({ before, after }) => {
   return { before: finalBefore, after: finalAfter };
 };
 
-const checkSetOfPullRequests = async (page) => {
-  const allPrs = (await fetch(githubLinks.allPrs({ page }))) || [];
+const checkSetOfPullRequests = async ({
+  page,
+  lastPrCheckedCreatedAt,
+  owner,
+  repo,
+}) => {
+  const allPrs = (await fetch(githubLinks.allPrs({ page, owner, repo }))) || [];
 
   let prCounter = 1;
+
   for (const pr of allPrs) {
     console.log("Checking pr number: ", prCounter, " in page: ", page);
+    prCounter++;
+
+    if (
+      new Date(lastPrCheckedCreatedAt).getTime() <
+      new Date(pr.created_at).getTime()
+    ) {
+      continue;
+    }
+
     if (pr.merged_at) {
       const comments = await fetch(pr.review_comments_url);
 
@@ -164,11 +192,13 @@ const checkSetOfPullRequests = async (page) => {
 
           const before = await getFullFileText(
             comment.original_commit_id,
-            path
+            path,
+            owner,
+            repo
           );
 
           const after = before
-            ? await getFullFileText(comment.commit_id, path)
+            ? await getFullFileText(comment.commit_id, path, owner, repo)
             : false;
 
           if (before && after) {
@@ -193,9 +223,11 @@ const checkSetOfPullRequests = async (page) => {
         }
       }
     }
-    prCounter++;
+
+    writeStatus({
+      [`${owner}/${repo}`]: { lastPrCheckedCreatedAt: pr.created_at },
+    });
   }
-  console.log("allPrs.length: ", allPrs.length);
   if (allPrs.length < 100) {
     return true;
   } else {
@@ -205,14 +237,30 @@ const checkSetOfPullRequests = async (page) => {
 
 const start = async () => {
   try {
-    let page = 1;
-    let stopCondition = false;
+    for (const { owner, repo } of repositories) {
+      let page = 1;
+      let stopCondition = false;
+      let currentStatus = {};
+      try {
+        currentStatus = JSON.parse(fs.readFileSync(statusFilePath));
+      } catch {}
 
-    while (!stopCondition) {
-      stopCondition = await checkSetOfPullRequests(page);
-      page++;
+      const lastPrCheckedCreatedAt =
+        currentStatus[`${owner}/${repo}`]?.lastPrCheckedCreatedAt ||
+        new Date().getTime();
+
+      while (!stopCondition) {
+        stopCondition = await checkSetOfPullRequests({
+          page,
+          lastPrCheckedCreatedAt,
+          owner,
+          repo,
+        });
+
+        page++;
+      }
+      console.log("Done scraping project", `${owner}/${repo}`);
     }
-    console.log("Done scraping project", `${OWNER}/${REPO}`);
   } catch (error) {
     console.log("error: ", error);
   }
