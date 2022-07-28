@@ -16,6 +16,8 @@ const ignorePaths = [
   ".test",
   "environment.d",
   ".env",
+  ".css",
+  ".html",
 ];
 
 const fetch = async (url) => {
