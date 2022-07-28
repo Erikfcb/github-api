@@ -71,15 +71,29 @@ const waitForReset = (ms) => {
   });
 };
 
-const writeStatus = (data) => {
+const writeStatus = (data, mergeRestKeysName) => {
   let currentStatus = {};
   try {
     currentStatus = JSON.parse(fs.readFileSync(statusFilePath));
   } catch {}
 
+  let newData = data;
+
+  if (mergeRestKeysName) {
+    newData = {
+      [mergeRestKeysName]: {
+        ...currentStatus[mergeRestKeysName],
+        ...data[mergeRestKeysName],
+      },
+    };
+  }
+
   fs.writeFileSync(
     statusFilePath,
-    JSON.stringify({ ...currentStatus, ...data }),
+    JSON.stringify({
+      ...currentStatus,
+      ...newData,
+    }),
     "utf8"
   );
 };
@@ -272,6 +286,15 @@ const checkSetOfPullRequests = async ({
     });
   }
   if (allPrs.length < 100) {
+    // Add "finished" prop for skipping on next run without running through all prs
+    writeStatus(
+      {
+        [`${owner}/${repo}`]: {
+          finished: true,
+        },
+      },
+      `${owner}/${repo}`
+    );
     return true;
   } else {
     return false;
@@ -291,6 +314,13 @@ const start = async () => {
       try {
         currentStatus = JSON.parse(fs.readFileSync(statusFilePath));
       } catch {}
+
+      const isFinished = currentStatus[`${owner}/${repo}`]?.finished;
+
+      if (isFinished) {
+        console.log(`Skipping finished: ${owner}/${repo}`);
+        continue;
+      }
 
       const lastPrCheckedCreatedAt =
         currentStatus[`${owner}/${repo}`]?.lastPrCheckedCreatedAt ||
