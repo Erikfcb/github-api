@@ -136,7 +136,7 @@ const checkLimitReset = async () => {
 const getFullFileText = async (commitID, path, owner, repo) => {
   const trees = await fetch(githubLinks.trees({ commitID, owner, repo }));
 
-  const tree = trees.tree.find((item) => item.path === path);
+  const tree = trees?.tree?.find((item) => item.path === path);
 
   if (!tree) {
     return null;
