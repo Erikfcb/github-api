@@ -67,6 +67,19 @@ const writeStatus = (data) => {
   );
 };
 
+const writeError = (data) => {
+  let current = {};
+  try {
+    current = JSON.parse(fs.readFileSync("errors.json"));
+  } catch {}
+
+  fs.writeFileSync(
+    "errors.json",
+    JSON.stringify({ ...current, ...data }),
+    "utf8"
+  );
+};
+
 const checkLimitReset = async () => {
   const result = await (
     await nodeFetch(githubLinks.rateLimitStatus, {
@@ -150,6 +163,39 @@ const getFinalBeforeAndAfter = ({ before, after }) => {
   return { before: finalBefore, after: finalAfter };
 };
 
+const handleComment = async ({ pr, comment, path, owner, repo }) => {
+  const before = await getFullFileText(
+    comment.original_commit_id,
+    path,
+    owner,
+    repo
+  );
+
+  const after = before
+    ? await getFullFileText(comment.commit_id, path, owner, repo)
+    : false;
+
+  if (before && after) {
+    const final = getFinalBeforeAndAfter({ before, after });
+
+    if (final.before && final.after) {
+      const dataset = {
+        pr: pr.url,
+        comment: comment.url,
+        commentText: comment.body,
+        filePath: path,
+        ...final,
+      };
+
+      fs.writeFileSync(
+        `datasets/${comment.id}.json`,
+        JSON.stringify(dataset),
+        "utf8"
+      );
+    }
+  }
+};
+
 const checkSetOfPullRequests = async ({
   page,
   lastPrCheckedCreatedAt,
@@ -174,6 +220,8 @@ const checkSetOfPullRequests = async ({
     if (pr.merged_at) {
       const comments = await fetch(pr.review_comments_url);
 
+      const commentHandlers = [];
+
       if (comments.length > 0) {
         for (const comment of comments) {
           const path = comment.path;
@@ -190,37 +238,12 @@ const checkSetOfPullRequests = async ({
             continue;
           }
 
-          const before = await getFullFileText(
-            comment.original_commit_id,
-            path,
-            owner,
-            repo
+          commentHandlers.push(
+            handleComment({ pr, comment, path, owner, repo })
           );
-
-          const after = before
-            ? await getFullFileText(comment.commit_id, path, owner, repo)
-            : false;
-
-          if (before && after) {
-            const final = getFinalBeforeAndAfter({ before, after });
-
-            if (final.before && final.after) {
-              const dataset = {
-                pr: pr.url,
-                comment: comment.url,
-                commentText: comment.body,
-                filePath: path,
-                ...final,
-              };
-
-              fs.writeFileSync(
-                `datasets/${comment.id}.json`,
-                JSON.stringify(dataset),
-                "utf8"
-              );
-            }
-          }
         }
+
+        await Promise.all(commentHandlers);
       }
     }
 
@@ -261,8 +284,11 @@ const start = async () => {
       }
       console.log("Done scraping project", `${owner}/${repo}`);
     }
+    process.exit(0);
   } catch (error) {
-    console.log("error: ", error);
+    console.error("error: ", error.message);
+    writeError({ [new Date().toDateString()]: error.message });
+    start();
   }
 };
 

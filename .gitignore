@@ -3,3 +3,4 @@ datasets
 archive
 parser.js
 status.json
+errors.json
