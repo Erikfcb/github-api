@@ -22,25 +22,36 @@ const ignorePaths = [
   "config",
   ".json",
   ".yml",
+  ".yaml",
   ".test",
   "environment.d",
   ".env",
   ".css",
   ".html",
+  ".txt",
+  ".md",
 ];
 
 const fetch = async (url) => {
-  if (!url) {
+  try {
+    if (!url) {
+      return null;
+    }
+    await checkLimitReset();
+
+    const result = await nodeFetch(url, {
+      headers: {
+        Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN} `,
+      },
+    });
+
+    const parsed = await result.json();
+
+    return parsed;
+  } catch (error) {
+    writeError({ [new Date().toISOString()]: "fetch:  " + error.message });
     return null;
   }
-  await checkLimitReset();
-
-  const result = await nodeFetch(url, {
-    headers: {
-      Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN} `,
-    },
-  });
-  return result.json();
 };
 
 const githubLinks = {
@@ -269,6 +280,15 @@ const checkSetOfPullRequests = async ({
           if (pr.user.login === comment.user.login) {
             shouldSkip = true;
             console.log("shouldSkip: commenter is pr creator");
+          }
+
+          if (
+            !path.endsWith(".js") &&
+            !path.endsWith(".jsx") &&
+            !path.endsWith(".ts") &&
+            !path.endsWith(".tsx")
+          ) {
+            shouldSkip = true;
           }
 
           if (shouldSkip) {
