@@ -30,6 +30,9 @@ const ignorePaths = [
 ];
 
 const fetch = async (url) => {
+  if (!url) {
+    return null;
+  }
   await checkLimitReset();
 
   const result = await nodeFetch(url, {
@@ -138,7 +141,7 @@ const getFullFileText = async (commitID, path, owner, repo) => {
 
   const tree = trees?.tree?.find((item) => item.path === path);
 
-  if (!tree) {
+  if (!tree?.url) {
     return null;
   }
 
