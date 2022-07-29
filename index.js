@@ -36,6 +36,10 @@ const ignorePaths = [
   ".d.ts",
 ];
 
+const defaultCache = { trees: {} };
+
+let cache = defaultCache;
+
 const fetch = async (url) => {
   try {
     if (!url) {
@@ -152,7 +156,9 @@ const checkLimitReset = async () => {
 };
 
 const getFullFileText = async (commitID, path, owner, repo) => {
-  const trees = await fetch(githubLinks.trees({ commitID, owner, repo }));
+  const trees =
+    cache.trees[commitID] ||
+    (await fetch(githubLinks.trees({ commitID, owner, repo })));
 
   const tree = trees?.tree?.find((item) => item.path === path);
 
@@ -324,6 +330,20 @@ const checkSetOfPullRequests = async ({
             handleComment({ pr, comment, path, owner, repo })
           );
         }
+        if (commentHandlers.length) {
+          const treeData = await fetch(
+            githubLinks.trees({
+              commitID: comments[0]?.commit_id,
+              owner,
+              repo,
+            })
+          );
+          cache = {
+            trees: {
+              [comments[0]?.commit_id]: treeData,
+            },
+          };
+        }
 
         await Promise.all(commentHandlers);
       }
@@ -332,6 +352,9 @@ const checkSetOfPullRequests = async ({
     writeStatus({
       [`${owner}/${repo}`]: { lastPrCheckedCreatedAt: pr.created_at },
     });
+
+    // reset cache
+    cache = { ...cache, trees: {} };
   }
   if (allPrs.length < 100) {
     // Add "finished" prop for skipping on next run without running through all prs
