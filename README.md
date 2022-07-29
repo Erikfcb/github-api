@@ -19,7 +19,7 @@
 2. after each pr check we update status,json file with the create_at field of the pr, so next time running the program it will continue from the last checked pr and not from the beginning.
 3. The list of repos is filtered by having more than 50 prs, 10 stars, 10 contributors and that the project is written in Javascript.
 4. With the access token of Github, there's a limit of 5,000 calls per hour. When the program runs, on every request to Github it checks the amount of available requests (checkLimitReset), if you reached the limit it will wait until reset and continue automatically when the limit was reset.
-5. Total amount of Github calls:
+5. Github calls per repo:
    1. one call for 100 prs per page.
    2. one call for pr comments
    3. one call for whole "before" file
