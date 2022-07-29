@@ -5,12 +5,15 @@ import repos from "./repositories.json" assert { type: "json" };
 // import { repositories } from "./repositories.js";
 
 const repositories = repos.items
-  .map(({ name }) => {
+  .map(({ name, totalPullRequests }) => {
     const [owner, repo] = name.split("/");
 
-    return { owner, repo };
+    return { owner, repo, totalPullRequests };
   })
-  .filter(({ owner, repo }) => owner && repo);
+  .filter(({ owner, repo }) => owner && repo)
+  .sort((a, b) => {
+    return a.totalPullRequests > b.totalPullRequests ? 1 : -1;
+  });
 
 const ALLOWED_NUMBER_OF_CHARACTERS = 512;
 
@@ -289,6 +292,15 @@ const checkSetOfPullRequests = async ({
             !path.endsWith(".ts") &&
             !path.endsWith(".tsx")
           ) {
+            shouldSkip = true;
+          }
+
+          // Exclude comments on inline comments
+          if (comment.diff_hunk?.split("\n")?.pop().includes("//")) {
+            console.log(
+              "Skipped comment on inline comment: ",
+              comment.diff_hunk
+            );
             shouldSkip = true;
           }
 
