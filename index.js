@@ -281,7 +281,7 @@ const checkSetOfPullRequests = async ({
           });
 
           // Exclude comments from the author of the PR
-          if (pr.user.login === comment.user.login) {
+          if (pr.user?.login === comment.user?.login) {
             shouldSkip = true;
             console.log("shouldSkip: commenter is pr creator");
           }
