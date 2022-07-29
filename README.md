@@ -20,7 +20,7 @@
 3. The list of repos is filtered by having more than 50 prs, 10 stars, 10 contributors and that the project is written in Javascript.
 4. With the access token of Github, there's a limit of 5,000 calls per hour. When the program runs, on every request to Github it checks the amount of available requests (checkLimitReset), if you reached the limit it will wait until reset and continue automatically when the limit was reset.
 5. Github calls per repo:
-   1. one call for 100 prs per page.
-   2. one call for pr comments
-   3. one call for whole "before" file
-   4. one call for whole "after" file
+   1. One call for 100 prs per page.
+   2. One call for pr comments
+   3. Two calls for whole "before" file (1. get full tree, 2. get specific file)
+   4. Two calls for whole "after" file (1. get full tree, 2. get specific file)
