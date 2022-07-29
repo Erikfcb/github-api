@@ -296,10 +296,18 @@ const checkSetOfPullRequests = async ({
           }
 
           // Exclude comments on inline comments
-          if (comment.diff_hunk?.split("\n")?.pop().includes("//")) {
+          if (
+            comment.diff_hunk
+              ?.split("\n")
+              ?.pop()
+              .replace("+", "")
+              .replace("-", "")
+              .trim()
+              .startsWith("//")
+          ) {
             console.log(
               "Skipped comment on inline comment: ",
-              comment.diff_hunk
+              comment.diff_hunk?.split("\n")?.pop()
             );
             shouldSkip = true;
           }
