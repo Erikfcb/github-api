@@ -30,6 +30,7 @@ const ignorePaths = [
   ".html",
   ".txt",
   ".md",
+  ".d.ts",
 ];
 
 const fetch = async (url) => {
