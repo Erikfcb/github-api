@@ -162,6 +162,10 @@ const getFullFileText = async (commitID, path, owner, repo) => {
 
   const base64Content = await fetch(tree.url);
 
+  if (!base64Content) {
+    return null;
+  }
+
   return Buffer.from(base64Content.content, "base64").toString();
 };
 
@@ -362,7 +366,6 @@ const start = async () => {
       const isFinished = currentStatus[`${owner}/${repo}`]?.finished;
 
       if (isFinished) {
-        console.log(`Skipping finished: ${owner}/${repo}`);
         continue;
       }
 
